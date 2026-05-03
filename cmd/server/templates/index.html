@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tistory Indexer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    h1 span {
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: #888;
+      margin-left: 8px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+
+    .stat-label { color: #666; }
+    .stat-value { font-weight: 500; color: #111; }
+    .stat-value.none { color: #bbb; font-weight: 400; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: #333; }
+    .btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-msg {
+      margin-top: 12px;
+      font-size: 0.875rem;
+      padding: 10px 14px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .result-msg.success { background: #f0fdf4; color: #166534; }
+    .result-msg.error   { background: #fef2f2; color: #991b1b; }
+
+    pre {
+      background: #f8f8f8;
+      border-radius: 7px;
+      padding: 16px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      color: #333;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .empty { color: #bbb; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>Tistory Indexer <span>Google Search Console 자동 제출</span></h1>
+
+    <!-- 실행 상태 카드 -->
+    <div class="card">
+      <div class="card-title">실행 상태</div>
+      <div class="stat-row">
+        <span class="stat-label">마지막 실행</span>
+        <span class="stat-value" id="last-run">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">마지막 GSC 제출</span>
+        <span class="stat-value" id="last-submitted">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">등록된 URL 수</span>
+        <span class="stat-value" id="url-count">—</span>
+      </div>
+    </div>
+
+    <!-- 실행 버튼 카드 -->
+    <div class="card">
+      <div class="card-title">수동 실행</div>
+      <button class="btn" id="run-btn" onclick="runIndexer()">
+        <div class="spinner" id="spinner"></div>
+        sitemap 업데이트
+      </button>
+      <div class="result-msg" id="result-msg"></div>
+    </div>
+
+    <!-- last_state.json 카드 -->
+    <div class="card">
+      <div class="card-title">last_state.json</div>
+      <pre id="state-json"><span class="empty">로딩 중...</span></pre>
+    </div>
+
+  </div>
+
+  <script>
+    function formatDate(iso) {
+      if (!iso || iso === "0001-01-01T00:00:00Z") return '<span class="none">없음</span>';
+      return new Date(iso).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+    }
+
+    async function loadState() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+
+        document.getElementById('last-run').innerHTML = formatDate(data.last_run_at);
+        document.getElementById('last-submitted').innerHTML = formatDate(data.last_submitted_at);
+        document.getElementById('url-count').textContent = (data.known_urls?.length ?? 0) + ' 개';
+        document.getElementById('state-json').textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        document.getElementById('state-json').textContent = '상태 파일을 읽을 수 없습니다.';
+      }
+    }
+
+    async function runIndexer() {
+      const btn = document.getElementById('run-btn');
+      const spinner = document.getElementById('spinner');
+      const msg = document.getElementById('result-msg');
+
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      msg.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/run', { method: 'POST' });
+        const data = await res.json();
+
+        msg.className = 'result-msg ' + (res.ok ? 'success' : 'error');
+        msg.textContent = data.message;
+        msg.style.display = 'block';
+
+        if (res.ok) await loadState();
+      } catch (e) {
+        msg.className = 'result-msg error';
+        msg.textContent = '서버 연결에 실패했습니다.';
+        msg.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+      }
+    }
+
+    loadState();
+  </script>
+</body>
+</html>

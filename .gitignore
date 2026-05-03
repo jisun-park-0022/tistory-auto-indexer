@@ -1,0 +1,23 @@
+# Ignore environment files
+.env
+.env.*
+!.env.example
+
+# Ignore local state
+data/last_state.json
+
+# Ignore credentials
+credentials/*.json
+
+# Ignore build artifacts
+tistory-indexer
+tistory-indexer.exe
+authorize
+authorize.exe
+
+# Ignore config files
+config.yaml
+!config.yaml.example
+
+# Ignore development files
+develop-report.md

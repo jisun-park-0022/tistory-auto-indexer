@@ -1,0 +1,13 @@
+tistory:
+  sitemap_url: "https://your-blog.tistory.com/sitemap.xml"
+
+google:
+  site_url: "https://your-blog.tistory.com/"
+  sitemap_url: "https://your-blog.tistory.com/sitemap.xml"
+
+state:
+  file_path: "./data/last_state.json"
+
+http:
+  timeout_seconds: 10
+  user_agent: "tistory-indexer/1.0"
