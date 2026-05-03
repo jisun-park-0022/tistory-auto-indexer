@@ -1,5 +1,6 @@
 # Google Search Console API 인증 설정 
  - Google Cloud Console에서 Google Search Console에 대한 인증을 진행합니다. 
+ - 인증 진행 후 
   ---
   ### 1. Google Cloud 프로젝트 생성 (또는 기존 것 사용)
 
@@ -70,3 +71,16 @@
   ```sh
   $ go run cmd/indexer/main.go
   ```
+
+  ### 9. 실행
+  ```sh
+  # 빌드
+  $ go build -o server.exe ./cmd/server/
+  
+  # INFO 레벨로 실행
+  $ ./server
+
+  # Debug 모드로 실행
+  $ $env:LOG_LEVEL="debug"; ./server
+  ```
+  - 브라우저에서 'http://localhost:8090'으로 접속
