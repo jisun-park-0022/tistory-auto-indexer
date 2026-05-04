@@ -74,8 +74,8 @@
 
   ### 9. 실행
   ```sh
-  # 빌드
-  $ go build -o server.exe ./cmd/server/
+  # Web ver. 빌드
+  $ go build -o server ./cmd/server/
   
   # INFO 레벨로 실행
   $ ./server
@@ -84,3 +84,11 @@
   $ $env:LOG_LEVEL="debug"; ./server
   ```
   - 브라우저에서 'http://localhost:8090'으로 접속
+
+  ```sh
+  # CLI ver. 빌드
+  $ go build -o indexer ./cmd/indexer/
+  
+  # 실행
+  $ ./indexer
+  ```
